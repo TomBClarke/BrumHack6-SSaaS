@@ -1,12 +1,12 @@
 const fs = require('fs'),
-  facts = fs.readFileSync('util/kitten_facts.txt').toString().split('\n').sort(function(ele1, ele2) {
-  return ele1.length - ele2.length;
-});
+  facts = fs.readFileSync('util/kitten_facts.txt').toString().split('\n').sort(function (ele1, ele2) {
+    return ele1.length - ele2.length;
+  });
 
 module.exports = {
-  
+
   facts: facts,
-  
+
   getFact: function (length) {
     var acceptableDiff = 10;
     do {
@@ -17,5 +17,5 @@ module.exports = {
     } while (filtered.length === 0);
     return filtered[Math.floor(Math.random() * filtered.length)];
   }
-  
+
 };
