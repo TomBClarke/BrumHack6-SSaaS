@@ -1,3 +1,9 @@
 # Jetbrains
 .idea
 *.iml
+
+# Visual Studio
+.vs
+SSaaS-server.njsproj
+SSaaS-server/bin
+SSaaS-server/obj
