@@ -39,8 +39,7 @@ function validateText(text) {
 }
 
 function validateNumber(num) {
-  var num = parseInt(numberList[i]);
-  if (isNan(num)) {
+  if (isNaN(num)) {
     throw new Error('number' + num + ' is \'NaN\' :\'(');
   }
   if (num > 1) {
@@ -74,14 +73,15 @@ function processSentences(userText, sentenceTones, settings) {
   // Check each sentence.
   for (var i = 0; i < sentenceTones.length; i++) {
     var sentenceTone = sentenceTones[i];
-    processSentence(userText, sentenceTone.tone_categories, sentenceTone.input_from, sentenceTone.input_to, settings);
+    userText = processSentence(userText, sentenceTone.tone_categories, sentenceTone.text, settings);
   }
+  return userText;
 }
 
-function processSentence(userText, categories, from, to, settings) {
+function processSentence(userText, categories, oldText, settings) {
   var shouldSwap = false;
   // Check each category.
-  for (var i = 0; i < categories; i++) {
+  for (var i = 0; i < categories.length; i++) {
     var category = categories[i];
     var badWords;
     var threshold;
@@ -112,8 +112,9 @@ function processSentence(userText, categories, from, to, settings) {
 
   if (shouldSwap) {
     // Swap sentence.
-    userText = userText.substr(0, from) + facts.getFact(to - from) + userText.substr(to, userText.length - 1);
+    userText = userText.replace(oldText, facts.getFact(oldText.length));
   }
+  return userText;
 }
 
 function checkCategory(tones, badWords, threshold) {
@@ -156,10 +157,10 @@ router.post('/', function (req, res, next) {
     } else {
       if (tone.sentences_tone) {
         // Multiple sentences.
-        processSentences(userText, tone.sentences_tone, settings);
+        userText = processSentences(userText, tone.sentences_tone, settings);
       } else {
         // Single sentence.
-        processSentence(userText, tone.document_tone.tone_categories, 0, userText.length - 1, settings);
+        userText = processSentence(userText, tone.document_tone.tone_categories, userText, settings);
       }
       res.send(JSON.stringify(userText));
     }
