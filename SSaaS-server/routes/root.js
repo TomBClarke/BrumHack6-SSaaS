@@ -5,6 +5,6 @@ const express = require('express'),
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: false }));
 
-router.use('/makeSafe', require('./make_safe.js'));
+router.use('/makesafe', require('./make_safe.js'));
 
 module.exports = router;
