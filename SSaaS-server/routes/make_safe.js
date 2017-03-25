@@ -8,10 +8,25 @@ const express = require('express'),
     version: 'v3',
     version_date: '2016-05-19'
   }),
-  DEFAULT_THRESHOLDS = { 'emotion': 0.6, 'language': 0.6, 'social': 0.6 },
-  CATEGORY_NAMES = { 'emotion': 'emotion_tone', 'language': 'language_tone', 'social': 'social_tone' },
-  BAD_EMOTION = ['anger', 'sadness', 'disgust', 'fear'],
-  BAD_LANGUAGE = ['tentative'],
+  DEFAULT_THRESHOLDS = {
+    'emotion': 0.6,
+    'language': 0.6,
+    'social': 0.6
+  },
+  CATEGORY_NAMES = {
+    'emotion': 'emotion_tone',
+    'language': 'language_tone',
+    'social': 'social_tone'
+  },
+  BAD_EMOTION = [
+    'anger',
+    'sadness',
+    'disgust',
+    'fear'
+  ],
+  BAD_LANGUAGE = [
+    'tentative'
+  ],
   BAD_SOCIAL = [];
 
 function validateText(text) {
@@ -23,21 +38,16 @@ function validateText(text) {
   }
 }
 
-function validateNumbers(numberList) {
-  for (var i = 0; i < numberList; i++) {
-    var num = parseInt(numberList[i]);
-    if (typeof num !== 'number') {
-      throw new Error('number' + num + ' not \'number\' :\'(');
-    }
-    if (isNan(num)) {
-      throw new Error('number' + num + ' is \'NaN\' :\'(');
-    }
-    if (num > 1) {
-      throw new Error('number' + num + ' is too large :\'(');
-    }
-    if (num < 0) {
-      throw new Error('number' + num + ' is too small :\'(');
-    }
+function validateNumber(num) {
+  var num = parseInt(numberList[i]);
+  if (isNan(num)) {
+    throw new Error('number' + num + ' is \'NaN\' :\'(');
+  }
+  if (num > 1) {
+    throw new Error('number' + num + ' is too large :\'(');
+  }
+  if (num < 0) {
+    throw new Error('number' + num + ' is too small :\'(');
   }
 }
 
@@ -45,18 +55,30 @@ function validateUserInput(req) {
   // Check the text.
   validateText(req.body.text);
   // Check the numbers.
-  validateNumbers([req.body.emotion, req.body.language, req.body.social]);
-}
+  var emotion = req.body.emotion;
+  var language = req.body.language;
+  var social = req.body.social;
 
-function processSentences(userText, sentenceTones, userSettings) {
-  // Check each sentence.
-  for (var i = 0; i < sentenceTones.length; i++) {
-    var sentenceTone = sentenceTones[i];
-    processSentence(userText, sentenceTone.tone_categories, sentenceTone.input_from, sentenceTone.input_to, userSettings);
+  if (!(emotion === undefined || emotion === null)) {
+    validateNumber(emotion);
+  }
+  if (!(language === undefined || language === null)) {
+    validateNumber(language);
+  }
+  if (!(social === undefined || social === null)) {
+    validateNumber(social);
   }
 }
 
-function processSentence(userText, categories, from, to, userSettings) {
+function processSentences(userText, sentenceTones, settings) {
+  // Check each sentence.
+  for (var i = 0; i < sentenceTones.length; i++) {
+    var sentenceTone = sentenceTones[i];
+    processSentence(userText, sentenceTone.tone_categories, sentenceTone.input_from, sentenceTone.input_to, settings);
+  }
+}
+
+function processSentence(userText, categories, from, to, settings) {
   var shouldSwap = false;
   // Check each category.
   for (var i = 0; i < categories; i++) {
@@ -66,27 +88,15 @@ function processSentence(userText, categories, from, to, userSettings) {
     switch (category.category_id) {
       case CATEGORY_NAMES.emotion:
         badWords = BAD_EMOTION;
-        if (userSettings.emotion) {
-          threshold = userSettings.emotion;
-        } else {
-          threshold = DEFAULT_THRESHOLDS.emotion;
-        }
+        threshold = settings.emotion;
         break;
       case CATEGORY_NAMES.language:
         badWords = BAD_LANGUAGE;
-        if (userSettings.language) {
-          threshold = userSettings.language;
-        } else {
-          threshold = DEFAULT_THRESHOLDS.language;
-        }
+        threshold = settings.language;
         break;
       case CATEGORY_NAMES.social:
         badWords = BAD_SOCIAL;
-        if (userSettings.social) {
-          threshold = userSettings.social;
-        } else {
-          threshold = DEFAULT_THRESHOLDS.social;
-        }
+        threshold = settings.social;
         break;
       default:
         throw new Error('category not recognised :\'(');
@@ -125,17 +135,31 @@ function checkCategory(tones, badWords, threshold) {
 router.post('/', function (req, res, next) {
   validateUserInput(req);
   var userText = req.body.text;
-  var userSettings = { 'emotion': parseInt(req.body.emotion), 'language': parseInt(req.body.language), 'social': parseInt(req.body.social) };
+  var emotion = req.body.emotion;
+  var language = req.body.language;
+  var social = req.body.social;
+
+  if (emotion === undefined || emotion === null) {
+    emotion = DEFAULT_THRESHOLDS.emotion;
+  }
+  if (language === undefined || language === null) {
+    language = DEFAULT_THRESHOLDS.language;
+  }
+  if (social === undefined || social === null) {
+    social = DEFAULT_THRESHOLDS.social;
+  }
+
+  var settings = { 'emotion': emotion, 'language': language, 'social': social };
   TONE_ANALYZER.tone({ text: userText }, function (err, tone) {
     if (err) {
       next(err);
     } else {
       if (tone.sentences_tone) {
         // Multiple sentences.
-        processSentences(userText, tone.sentences_tone, userSettings);
+        processSentences(userText, tone.sentences_tone, settings);
       } else {
         // Single sentence.
-        processSentence(userText, tone.document_tone.tone_categories, 0, userText.length - 1, userSettings);
+        processSentence(userText, tone.document_tone.tone_categories, 0, userText.length - 1, settings);
       }
       res.send(JSON.stringify(tone));
     }
