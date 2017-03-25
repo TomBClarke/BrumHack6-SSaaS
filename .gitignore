@@ -4,6 +4,7 @@
 
 # Visual Studio
 .vs
-SSaaS-server.njsproj
+*.sln
+*.njsproj
 SSaaS-server/bin
 SSaaS-server/obj
