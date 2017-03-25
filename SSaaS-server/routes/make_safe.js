@@ -161,7 +161,7 @@ router.post('/', function (req, res, next) {
         // Single sentence.
         processSentence(userText, tone.document_tone.tone_categories, 0, userText.length - 1, settings);
       }
-      res.send(JSON.stringify(tone));
+      res.send(JSON.stringify(userText));
     }
   });
 });
