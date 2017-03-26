@@ -1,22 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- Extension imports -->
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="popup.js"></script>
 </head>
-<body>
+<body style="width: 400px; text-align: center;">
 
-<span id="result"></span>
+    <div class="jumbotron">
+        <h1>Safe Space</h1>
+    </div>
+    <div>Toggle this extension on/off: <button id="toggleActive" class="btn btn-primary btn-success">Turn Off</button></div>
 
+    <div class="container">
+        <div>Emotion:<input type="number" step="0.1" min="0" max="1" id="emotion" /></div>
+    </div>
+    <div class="container">
+        <div>Language:<input type="number" step="0.1" min="0" max="1" id="language" /></div>
+    </div>
+    <div class="container">
+        <div>Social:<input type="number" step="0.1" min="0" max="1" id="social" /></div>
+    </div>
+    <div class="container">
+        <div><button id="saveSettings" class="btn btn-primary btn-success">Save</button></div>
 
-<input type="text" id="settings" placeholder="Settings go here....">
-<button id="saveSettings">Save</button>
-
-<button id="toggleActive">On/Off</button>
-
-
-<script type="text/javascript" src="popup.js"></script>
-
-
+    </div>
+    <div class="container">
+        <div style="color: red;" id="error"></div>
+    </div>
 </body>
 </html>
-
-
