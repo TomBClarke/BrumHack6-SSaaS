@@ -1,5 +1,5 @@
 function validateText(text, texts) {
-  if (!(text === null || text === undefined)) {
+  if (text !== null && text !== undefined) {
     if (!(texts === null || texts === undefined)) {
       throw new Error('Cannot have single text and list of texts :\'(');
     }
@@ -7,10 +7,7 @@ function validateText(text, texts) {
     if (typeof text !== 'string') {
       throw new Error('Text ' + text + ' not \'string\' :\'(');
     }
-  } else if (!(texts === null || texts === undefined)) {
-    if (!(text === null || text === undefined)) {
-      throw new Error('Cannot have single text and list of texts :\'(');
-    }
+  } else if (texts !== null && texts !== undefined) {
     // Checks list of strings.
     if (texts === []) {
       throw new Error('Texts list is empty :\'(');

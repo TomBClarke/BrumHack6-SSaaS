@@ -18,7 +18,7 @@ const express = require('express'),
 
 function validateUserInput(req) {
   // Check the text.
-  validator.validateText(req.body.text, req.body.texts);
+  validator.validateText(req.body.text, req.body['texts[]']);
   // Check the numbers.
   var emotion = req.body.emotion;
   var language = req.body.language;
@@ -56,7 +56,7 @@ function processSentence(userText, categories, oldText, settings) {
 /* POST make safe */
 router.post('/', function (req, res, next) {
   validateUserInput(req);
-  var userTexts = req.body.texts;
+  var userTexts = req.body['texts[]'];
   var emotion = req.body.emotion;
   var language = req.body.language;
   var social = req.body.social;
@@ -78,7 +78,7 @@ router.post('/', function (req, res, next) {
   var numOfTexts = userTexts.length;
   var processed = 0;
 
-  $.each(userTexts, function (index, userText) {
+  userTexts.forEach(function (userText, index) {
     TONE_ANALYZER.tone({ text: userText }, function (err, tone) {
       if (err) {
         next(err);
@@ -93,7 +93,7 @@ router.post('/', function (req, res, next) {
 
         userTexts[index] = userText;
         processed++;
-        if (processed == numOfTexts) {
+        if (processed === numOfTexts) {
           // All processed.
           res.send({ texts: userTexts });
         }

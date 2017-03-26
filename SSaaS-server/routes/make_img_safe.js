@@ -23,7 +23,7 @@ const express = require('express'),
 
 function validateUserInput(req) {
   // Check the url.
-  validator.validateText(req.body.url, req.body.urls);
+  validator.validateText(req.body.url, req.body['urls[]']);
   // Check the numbers.
   var emotion = req.body.emotion;
   var language = req.body.language;
@@ -57,7 +57,7 @@ function processSentence(categories, settings) {
 /* POST make img safe */
 router.post('/', function (req, res, next) {
   validateUserInput(req);
-  var userURL = req.body.urls;
+  var userURLs = req.body['urls[]'];
 
   var emotion = req.body.emotion;
   var language = req.body.language;
@@ -75,14 +75,23 @@ router.post('/', function (req, res, next) {
 
   var settings = { 'emotion': emotion, 'language': language, 'social': social };
 
-  if (userTexts === undefined || userTexts === null || userTexts === []) {
-    userUrls = [req.body.url];
+  if (userURLs === undefined || userURLs === null || userURLs === []) {
+    userURLs = [req.body.url];
   }
 
-  var numOfTexts = userUrls.length;
+  var numOfURLs = userURLs.length;
   var processed = 0;
   
-  $.each(userUrls, function (index, userUrl) {
+  userURLs.forEach(function (userURL, index) {
+    if (!/(\.(png)|(jpe?g))(($)|(\?)|(#))/i.test(userURL)) {
+      processed++;
+      if (processed === numOfURLs) {
+        // All processed.
+        res.send({ urls: userURLs });
+      }
+      return;
+    }
+    
     var params = {
       url: userURL
     };
@@ -112,11 +121,11 @@ router.post('/', function (req, res, next) {
               safe = processSentence(tone.document_tone.tone_categories, settings);
             }
             if (!safe) {
-              userUrls[index] = urls.getURL();
+              userURLs[index] = urls.getURL();
             }
 
             processed++;
-            if (processed == numOfUrls) {
+            if (processed === numOfURLs) {
               // All processed.
               res.send({ urls: userURLs });
             }
@@ -124,7 +133,7 @@ router.post('/', function (req, res, next) {
         });
       }
     });
-  }
+  });
 });
 
 module.exports = router;

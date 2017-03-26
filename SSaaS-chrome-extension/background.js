@@ -7,7 +7,7 @@ var DEFAULTS = {
   }
 },
   currentSettings = DEFAULTS,
-  SSAAS_URL = 'http://localhost:3000',
+  SSAAS_URL = 'https://safe-space-as-a-service.com:3000',
   SSAAS_TEXT = 'makesafe',
   SSAAS_IMG = 'makeimgsafe';
 
@@ -68,7 +68,7 @@ function textNodesUnder(node) {
     // Text fields
     if (node.nodeType === 3) {
       // Only get text node with text.
-      if (/[a-zA-Z]/.test($(node).text())) {
+      if (/[a-zA-Z]/.test(node.nodeValue)) {
         all.push(node);
       }
     } else {
@@ -78,70 +78,71 @@ function textNodesUnder(node) {
   return all;
 }
 
-// Calls the SSaaS.
-function processSentences(element) {
-  $.ajax({
-    type: 'POST',
-    url: SSAAS_URL + '/' + SSAAS_TEXT,
-    data: {
-      'text': $(element).text(),
-      'emotion': currentSettings.settings.emotion,
-      'language': currentSettings.settings.language,
-      'social': currentSettings.settings.social
-    },
-    success: function (data) {
-      element.nodeValue = data.text;
-    },
-    failure: failure,
-    dataType: 'json'
-  });
-}
-
-// Calls the SSaaS.
-function processImage(element) {
-  $.ajax({
-    type: 'POST',
-    url: SSAAS_URL + '/' + SSAAS_IMG,
-    data: {
-      'url': $(element).attr('src'),
-      'emotion': currentSettings.settings.emotion,
-      'language': currentSettings.settings.language,
-      'social': currentSettings.settings.social
-    },
-    success: function (data) {
-      $(element).attr('src', data.url);
-      $(element).removeAttr('srcset');
-    },
-    failure: failure,
-    dataType: 'json'
-  });
-}
-
-// Check the page and updates the page's TEXT.
-function updatePageText() {
-  $(textNodesUnder(document.body)).each(function (index, element) {
-    processSentences(element);
-  });
-}
-
-// Check the page and updates the page's IMAGES.
-function updatePageImage() {
-  $('img').each(function (index, element) {
-    $(element).attr('src', element.src);
-    if (/[a-zA-Z]/.test($(element).attr('src'))) {
-      processImage(element);
-    }
-  });
-}
+// // Calls the SSaaS.
+// function processSentences(element) {
+//   $.ajax({
+//     type: 'POST',
+//     url: SSAAS_URL + '/' + SSAAS_TEXT,
+//     data: {
+//       'text': $(element).text(),
+//       'emotion': currentSettings.settings.emotion,
+//       'language': currentSettings.settings.language,
+//       'social': currentSettings.settings.social
+//     },
+//     success: function (data) {
+//       element.nodeValue = data.text;
+//     },
+//     failure: failure,
+//     dataType: 'json'
+//   });
+// }
+//
+// // Calls the SSaaS.
+// function processImage(element) {
+//   $.ajax({
+//     type: 'POST',
+//     url: SSAAS_URL + '/' + SSAAS_IMG,
+//     data: {
+//       'url': $(element).attr('src'),
+//       'emotion': currentSettings.settings.emotion,
+//       'language': currentSettings.settings.language,
+//       'social': currentSettings.settings.social
+//     },
+//     success: function (data) {
+//       $(element).attr('src', data.url);
+//       $(element).removeAttr('srcset');
+//     },
+//     failure: failure,
+//     dataType: 'json'
+//   });
+// }
+//
+// // Check the page and updates the page's TEXT.
+// function updatePageText() {
+//   $(textNodesUnder(document.body)).each(function (index, element) {
+//     processSentences(element);
+//   });
+// }
+//
+// // Check the page and updates the page's IMAGES.
+// function updatePageImage() {
+//   $('img').each(function (index, element) {
+//     $(element).attr('src', element.src);
+//     if (/[a-zA-Z]/.test($(element).attr('src'))) {
+//       processImage(element);
+//     }
+//   });
+// }
 
 // Update texts in 1 request.
 function updatePageTexts() {
   var texts = textNodesUnder(document.body);
+  var mappedTexts = texts.map(function(ele) { return ele.nodeValue; });
   $.ajax({
     type: 'POST',
     url: SSAAS_URL + '/' + SSAAS_TEXT,
     data: {
-      'texts': texts,
+      'texts': mappedTexts,
       'emotion': currentSettings.settings.emotion,
       'language': currentSettings.settings.language,
       'social': currentSettings.settings.social
@@ -160,6 +161,7 @@ function updatePageTexts() {
 function updatePageImages() {
   var imgSelector = 'img';
   var urls = $(imgSelector);
+  $.each(urls, function (_, ele) { $(ele).attr('src', ele.src); });
   $.ajax({
     type: 'POST',
     url: SSAAS_URL + '/' + SSAAS_IMG,
