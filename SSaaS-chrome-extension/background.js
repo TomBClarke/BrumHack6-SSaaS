@@ -20,9 +20,13 @@ function failure(data) {
 // Loads initial data.
 chrome.storage.local.get(["active", "settings"], function (value) {
   // Load values.
-  currentSettings.active = value.active;
-  currentSettings.settings = value.settings;
-
+  if (!(value.active === undefined || value.active === null)) {
+    currentSettings.active = value.active;
+  }
+  if (!(value.settings === undefined || value.settings === null)) {
+    currentSettings.settings = value.settings;
+  }
+    
   // Initial check.
   if (currentSettings.active) {
     updatePageText();
