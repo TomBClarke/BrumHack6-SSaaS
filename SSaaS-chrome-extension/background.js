@@ -26,11 +26,11 @@ chrome.storage.local.get(["active", "settings"], function (value) {
   if (!(value.settings === undefined || value.settings === null)) {
     currentSettings.settings = value.settings;
   }
-    
+
   // Initial check.
   if (currentSettings.active) {
-    updatePageText();
     updatePageImages();
+    updatePageTexts();
   }
 });
 
@@ -125,7 +125,7 @@ function updatePageText() {
 }
 
 // Check the page and updates the page's IMAGES.
-function updatePageImages() {
+function updatePageImage() {
   $('img').each(function (index, element) {
     $(element).attr('src', element.src);
     if (/[a-zA-Z]/.test($(element).attr('src'))) {
@@ -134,3 +134,50 @@ function updatePageImages() {
   });
 }
 
+// Update texts in 1 request.
+function updatePageTexts() {
+  var texts = textNodesUnder(document.body);
+  $.ajax({
+    type: 'POST',
+    url: SSAAS_URL + '/' + SSAAS_TEXT,
+    data: {
+      'texts': texts,
+      'emotion': currentSettings.settings.emotion,
+      'language': currentSettings.settings.language,
+      'social': currentSettings.settings.social
+    },
+    success: function (data) {
+      $.each(data.texts, function (index, value) {
+        texts[index].nodeValue = value;
+      });
+    },
+    failure: failure,
+    dataType: 'json'
+  });
+}
+
+// Update imgs in 1 request.
+function updatePageImages() {
+  var imgSelector = 'img';
+  var urls = $(imgSelector);
+  $.ajax({
+    type: 'POST',
+    url: SSAAS_URL + '/' + SSAAS_IMG,
+    data: {
+      'urls': $(imgSelector).map(function () {
+        return $(this).attr("src");
+      }).get(),
+      'emotion': currentSettings.settings.emotion,
+      'language': currentSettings.settings.language,
+      'social': currentSettings.settings.social
+    },
+    success: function (data) {
+      $.each(data.urls, function (index, value) {
+        $(urls[index]).attr('src', value);
+        $(urls[index]).removeAttr('srcset');
+      });
+    },
+    failure: failure,
+    dataType: 'json'
+  });
+}

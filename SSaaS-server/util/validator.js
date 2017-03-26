@@ -1,9 +1,27 @@
-function validateText(text) {
-  if (text === null || text === undefined) {
+function validateText(text, texts) {
+  if (!(text === null || text === undefined)) {
+    if (!(texts === null || texts === undefined)) {
+      throw new Error('Cannot have single text and list of texts :\'(');
+    }
+    // Check single text
+    if (typeof text !== 'string') {
+      throw new Error('Text ' + text + ' not \'string\' :\'(');
+    }
+  } else if (!(texts === null || texts === undefined)) {
+    if (!(text === null || text === undefined)) {
+      throw new Error('Cannot have single text and list of texts :\'(');
+    }
+    // Checks list of strings.
+    if (texts === []) {
+      throw new Error('Texts list is empty :\'(');
+    }
+    for (var i = 0; i < texts.length; i++) {
+      if (typeof texts[i] !== 'string') {
+        throw new Error('Text ' + texts[i] + ' not \'string\' :\'(');
+      }
+    }
+  } else {
     throw new Error('No text :\'(');
-  }
-  if (typeof text !== 'string') {
-    throw new Error('Text ' + text + ' not \'string\' :\'(');
   }
 }
 

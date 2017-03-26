@@ -23,7 +23,7 @@ const express = require('express'),
 
 function validateUserInput(req) {
   // Check the url.
-  validator.validateText(req.body.url);
+  validator.validateText(req.body.url, req.body.urls);
   // Check the numbers.
   var emotion = req.body.emotion;
   var language = req.body.language;
@@ -57,59 +57,74 @@ function processSentence(categories, settings) {
 /* POST make img safe */
 router.post('/', function (req, res, next) {
   validateUserInput(req);
-  var userURL = req.body.url;
+  var userURL = req.body.urls;
+
+  var emotion = req.body.emotion;
+  var language = req.body.language;
+  var social = req.body.social;
+
+  if (emotion === undefined || emotion === null) {
+    emotion = DEFAULT_THRESHOLDS.emotion;
+  }
+  if (language === undefined || language === null) {
+    language = DEFAULT_THRESHOLDS.language;
+  }
+  if (social === undefined || social === null) {
+    social = DEFAULT_THRESHOLDS.social;
+  }
+
+  var settings = { 'emotion': emotion, 'language': language, 'social': social };
+
+  if (userTexts === undefined || userTexts === null || userTexts === []) {
+    userUrls = [req.body.url];
+  }
+
+  var numOfTexts = userUrls.length;
+  var processed = 0;
   
-  var params = {
-    url: userURL
-  };
-  
-  VISUAL_RECOGNITION.classify(params, function(err, rec) {
-    if (err) {
-      next(err);
-    } else {
-      var image = rec.images[0];
-      if (image.error) {
-        err = new Error(image.error.description);
-        err.status = 400;
+  $.each(userUrls, function (index, userUrl) {
+    var params = {
+      url: userURL
+    };
+
+    VISUAL_RECOGNITION.classify(params, function (err, rec) {
+      if (err) {
         next(err);
-        return;
-      }
-      var tags = image.classifiers[0].classes.map(function (ele) { return ele.class; }).join('. ');
-      var emotion = req.body.emotion;
-      var language = req.body.language;
-      var social = req.body.social;
-      
-      if (emotion === undefined || emotion === null) {
-        emotion = DEFAULT_THRESHOLDS.emotion;
-      }
-      if (language === undefined || language === null) {
-        language = DEFAULT_THRESHOLDS.language;
-      }
-      if (social === undefined || social === null) {
-        social = DEFAULT_THRESHOLDS.social;
-      }
-      
-      var settings = { 'emotion': emotion, 'language': language, 'social': social };
-      TONE_ANALYZER.tone({ text: tags }, function (err, tone) {
-        if (err) {
+      } else {
+        var image = rec.images[0];
+        if (image.error) {
+          err = new Error(image.error.description);
+          err.status = 400;
           next(err);
-        } else {
-          var safe;
-          if (tone.sentences_tone) {
-            // Multiple sentences.
-            safe = processSentences(tone.sentences_tone, settings);
-          } else {
-            // Single sentence.
-            safe = processSentence(tone.document_tone.tone_categories, settings);
-          }
-          if (!safe) {
-            userURL = urls.getURL();
-          }
-          res.send({ url: userURL });
+          return;
         }
-      });
-    }
-  });
+        var tags = image.classifiers[0].classes.map(function (ele) { return ele.class; }).join('. ');
+        TONE_ANALYZER.tone({ text: tags }, function (err, tone) {
+          if (err) {
+            next(err);
+          } else {
+            var safe;
+            if (tone.sentences_tone) {
+              // Multiple sentences.
+              safe = processSentences(tone.sentences_tone, settings);
+            } else {
+              // Single sentence.
+              safe = processSentence(tone.document_tone.tone_categories, settings);
+            }
+            if (!safe) {
+              userUrls[index] = urls.getURL();
+            }
+
+            processed++;
+            if (processed == numOfUrls) {
+              // All processed.
+              res.send({ urls: userURLs });
+            }
+          }
+        });
+      }
+    });
+  }
 });
 
 module.exports = router;

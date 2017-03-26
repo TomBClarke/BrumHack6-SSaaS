@@ -18,7 +18,7 @@ const express = require('express'),
 
 function validateUserInput(req) {
   // Check the text.
-  validator.validateText(req.body.text);
+  validator.validateText(req.body.text, req.body.texts);
   // Check the numbers.
   var emotion = req.body.emotion;
   var language = req.body.language;
@@ -56,11 +56,14 @@ function processSentence(userText, categories, oldText, settings) {
 /* POST make safe */
 router.post('/', function (req, res, next) {
   validateUserInput(req);
-  var userText = req.body.text;
+  var userTexts = req.body.texts;
   var emotion = req.body.emotion;
   var language = req.body.language;
   var social = req.body.social;
 
+  if (userTexts === undefined || userTexts === null || userTexts === []) {
+    userTexts = [req.body.text];
+  }
   if (emotion === undefined || emotion === null) {
     emotion = DEFAULT_THRESHOLDS.emotion;
   }
@@ -72,19 +75,30 @@ router.post('/', function (req, res, next) {
   }
 
   var settings = { 'emotion': emotion, 'language': language, 'social': social };
-  TONE_ANALYZER.tone({ text: userText }, function (err, tone) {
-    if (err) {
-      next(err);
-    } else {
-      if (tone.sentences_tone) {
-        // Multiple sentences.
-        userText = processSentences(userText, tone.sentences_tone, settings);
+  var numOfTexts = userTexts.length;
+  var processed = 0;
+
+  $.each(userTexts, function (index, userText) {
+    TONE_ANALYZER.tone({ text: userText }, function (err, tone) {
+      if (err) {
+        next(err);
       } else {
-        // Single sentence.
-        userText = processSentence(userText, tone.document_tone.tone_categories, userText, settings);
+        if (tone.sentences_tone) {
+          // Multiple sentences.
+          userText = processSentences(userText, tone.sentences_tone, settings);
+        } else {
+          // Single sentence.
+          userText = processSentence(userText, tone.document_tone.tone_categories, userText, settings);
+        }
+
+        userTexts[index] = userText;
+        processed++;
+        if (processed == numOfTexts) {
+          // All processed.
+          res.send({ texts: userTexts });
+        }
       }
-      res.send({ text: userText });
-    }
+    });
   });
 });
 
