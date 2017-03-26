@@ -4,6 +4,7 @@
 
 # Visual Studio
 .vs
+*.dll
 *.sln
 *.njsproj
 **/*/obj
