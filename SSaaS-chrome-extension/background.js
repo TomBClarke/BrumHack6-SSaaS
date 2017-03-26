@@ -7,7 +7,7 @@ var DEFAULTS = {
   }
 },
   currentSettings = DEFAULTS,
-  SSAAS_URL = '',
+  SSAAS_URL = 'http://localhost:3000',
   SSAAS_TEXT = 'makesafe',
   SSAAS_IMG = 'makeimgsafe';
 
@@ -76,7 +76,7 @@ function textNodesUnder(node) {
 // Calls the SSaaS.
 function processSentences(element) {
   $.ajax({
-    type: "POST",
+    type: 'POST',
     url: SSAAS_URL + '/' + SSAAS_TEXT,
     data: { 
       'text': $(element).text(),
@@ -85,7 +85,7 @@ function processSentences(element) {
       'social': currentSettings.settings.social
     },
     success: function (data) {
-      $(element).text(data.text);
+      element.nodeValue = data.text;
     },
     failure: failure,
     dataType: 'json'
