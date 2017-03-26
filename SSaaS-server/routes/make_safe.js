@@ -1,5 +1,7 @@
 const express = require('express'),
   facts = require('./../util/kitten_facts.js'),
+  safeChecker = require('./../util/safe_checker.js'),
+  validator = require('./../util/validator.js'),
   router = express.Router(),
   watson = require('watson-developer-cloud'),
   TONE_ANALYZER = watson.tone_analyzer({
@@ -12,60 +14,24 @@ const express = require('express'),
     'emotion': 0.6,
     'language': 0.6,
     'social': 0.6
-  },
-  CATEGORY_NAMES = {
-    'emotion': 'emotion_tone',
-    'language': 'language_tone',
-    'social': 'social_tone'
-  },
-  BAD_EMOTION = [
-    'anger',
-    'sadness',
-    'disgust',
-    'fear'
-  ],
-  BAD_LANGUAGE = [
-    'tentative'
-  ],
-  BAD_SOCIAL = [];
-
-function validateText(text) {
-  if (text === null || text === undefined) {
-    throw new Error('No text :\'(');
-  }
-  if (typeof text !== 'string') {
-    throw new Error('text not \'string\' :\'(');
-  }
-}
-
-function validateNumber(num) {
-  if (isNaN(num)) {
-    throw new Error('number' + num + ' is \'NaN\' :\'(');
-  }
-  if (num > 1) {
-    throw new Error('number' + num + ' is too large :\'(');
-  }
-  if (num < 0) {
-    throw new Error('number' + num + ' is too small :\'(');
-  }
-}
+  };
 
 function validateUserInput(req) {
   // Check the text.
-  validateText(req.body.text);
+  validator.validateText(req.body.text);
   // Check the numbers.
   var emotion = req.body.emotion;
   var language = req.body.language;
   var social = req.body.social;
 
   if (!(emotion === undefined || emotion === null)) {
-    validateNumber(emotion);
+    validator.validateNumber(emotion);
   }
   if (!(language === undefined || language === null)) {
-    validateNumber(language);
+    validator.validateNumber(language);
   }
   if (!(social === undefined || social === null)) {
-    validateNumber(social);
+    validator.validateNumber(social);
   }
 }
 
@@ -79,57 +45,12 @@ function processSentences(userText, sentenceTones, settings) {
 }
 
 function processSentence(userText, categories, oldText, settings) {
-  var shouldSwap = false;
-  // Check each category.
-  for (var i = 0; i < categories.length; i++) {
-    var category = categories[i];
-    var badWords;
-    var threshold;
-    switch (category.category_id) {
-      case CATEGORY_NAMES.emotion:
-        badWords = BAD_EMOTION;
-        threshold = settings.emotion;
-        break;
-      case CATEGORY_NAMES.language:
-        badWords = BAD_LANGUAGE;
-        threshold = settings.language;
-        break;
-      case CATEGORY_NAMES.social:
-        badWords = BAD_SOCIAL;
-        threshold = settings.social;
-        break;
-      default:
-        throw new Error('category not recognised :\'(');
-    }
-
-    shouldSwap = checkCategory(category.tones, badWords, threshold);
-
-    if (shouldSwap) {
-      // We should swap the line, don't bother checking other fields.
-      break;
-    }
-  }
-
-  if (shouldSwap) {
+  if (safeChecker.isSafe(categories, settings)) {
+    return userText;
+  } else {
     // Swap sentence.
-    userText = userText.replace(oldText, facts.getFact(oldText.length));
+    return userText.replace(oldText, facts.getFact(oldText.length));
   }
-  return userText;
-}
-
-function checkCategory(tones, badWords, threshold) {
-  for (var i = 0; i < tones.length; i++) {
-    var tone = tones[i];
-    // See if the tone is in the bad words list.
-    if (badWords.indexOf(tone.tone_id) > -1) {
-      // See if it beats the threshold.
-      if (tone.score > threshold) {
-        // A strong bad tone.
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 /* POST make safe */
@@ -162,7 +83,7 @@ router.post('/', function (req, res, next) {
         // Single sentence.
         userText = processSentence(userText, tone.document_tone.tone_categories, userText, settings);
       }
-      res.send(JSON.stringify(userText));
+      res.send({ text: userText });
     }
   });
 });

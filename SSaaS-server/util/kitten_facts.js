@@ -1,5 +1,5 @@
 const fs = require('fs'),
-  facts = fs.readFileSync('util/kitten_facts.txt').toString().split('\n').sort(function (ele1, ele2) {
+  facts = fs.readFileSync('util/kitten_facts.txt').toString().split('\n').filter(function (ele) { return /^[^#].*$/.test(ele); }).sort(function (ele1, ele2) {
     return ele1.length - ele2.length;
   });
 
