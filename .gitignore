@@ -6,5 +6,4 @@
 .vs
 *.sln
 *.njsproj
-SSaaS-server/bin
-SSaaS-server/obj
+**/*/obj
