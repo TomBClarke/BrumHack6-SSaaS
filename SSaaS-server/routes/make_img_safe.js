@@ -5,7 +5,7 @@ const express = require('express'),
   validator = require('./../util/validator.js'),
   watson = require('watson-developer-cloud'),
   VISUAL_RECOGNITION = watson.visual_recognition({
-    api_key: 'b63256828a354278d37118c766f722ffa8304021',
+    api_key: '30d25667f0b283d385d681257f985121408ad48f',
     version: 'v3',
     version_date: '2016-05-20'
   }),
@@ -56,6 +56,7 @@ function processSentence(categories, settings) {
 
 /* POST make img safe */
 router.post('/', function (req, res, next) {
+  console.log(1);
   validateUserInput(req);
   var userURLs = req.body['urls[]'];
 
@@ -82,50 +83,68 @@ router.post('/', function (req, res, next) {
   var numOfURLs = userURLs.length;
   var processed = 0;
   
+  console.log(2);
   userURLs.forEach(function (userURL, index) {
+    console.log(3);
     if (!/(\.(png)|(jpe?g))(($)|(\?)|(#))/i.test(userURL)) {
+      console.log(4);
       processed++;
       if (processed === numOfURLs) {
+        console.log(5);
         // All processed.
         res.send({ urls: userURLs });
       }
       return;
     }
+    console.log(6);
     
     var params = {
       url: userURL
     };
 
     VISUAL_RECOGNITION.classify(params, function (err, rec) {
+      console.log(7);
       if (err) {
+        console.log(8);
         next(err);
       } else {
+        console.log(9);
         var image = rec.images[0];
         if (image.error) {
+          console.log(10);
           err = new Error(image.error.description);
           err.status = 400;
           next(err);
           return;
         }
         var tags = image.classifiers[0].classes.map(function (ele) { return ele.class; }).join('. ');
+        console.log(11);
         TONE_ANALYZER.tone({ text: tags }, function (err, tone) {
+          console.log(12);
           if (err) {
+            console.log(13);
             next(err);
           } else {
+            console.log(14);
             var safe;
             if (tone.sentences_tone) {
+              console.log(15);
               // Multiple sentences.
               safe = processSentences(tone.sentences_tone, settings);
             } else {
+              console.log(16);
               // Single sentence.
               safe = processSentence(tone.document_tone.tone_categories, settings);
             }
+            console.log(17);
             if (!safe) {
               userURLs[index] = urls.getURL();
             }
 
+            console.log(18);
             processed++;
             if (processed === numOfURLs) {
+              console.log(19);
               // All processed.
               res.send({ urls: userURLs });
             }
