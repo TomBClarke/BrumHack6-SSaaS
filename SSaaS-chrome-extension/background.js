@@ -30,6 +30,7 @@ chrome.storage.local.get(["active", "settings"], function (value) {
   // Initial check.
   if (currentSettings.active) {
     updatePageText();
+    updatePageImages();
   }
 });
 
@@ -65,7 +66,7 @@ function textNodesUnder(node) {
   }
   for (node = node.firstChild; node; node = node.nextSibling) {
     // Text fields
-    if (node.nodeType == 3) {
+    if (node.nodeType === 3) {
       // Only get text node with text.
       if (/[a-zA-Z]/.test($(node).text())) {
         all.push(node);
@@ -82,7 +83,7 @@ function processSentences(element) {
   $.ajax({
     type: 'POST',
     url: SSAAS_URL + '/' + SSAAS_TEXT,
-    data: { 
+    data: {
       'text': $(element).text(),
       'emotion': currentSettings.settings.emotion,
       'language': currentSettings.settings.language,
@@ -96,9 +97,40 @@ function processSentences(element) {
   });
 }
 
+// Calls the SSaaS.
+function processImage(element) {
+  $.ajax({
+    type: 'POST',
+    url: SSAAS_URL + '/' + SSAAS_IMG,
+    data: {
+      'url': $(element).attr('src'),
+      'emotion': currentSettings.settings.emotion,
+      'language': currentSettings.settings.language,
+      'social': currentSettings.settings.social
+    },
+    success: function (data) {
+      $(element).attr('src', data.url);
+      $(element).removeAttr('srcset');
+    },
+    failure: failure,
+    dataType: 'json'
+  });
+}
+
 // Check the page and updates the page's TEXT.
 function updatePageText() {
   $(textNodesUnder(document.body)).each(function (index, element) {
     processSentences(element);
   });
 }
+
+// Check the page and updates the page's IMAGES.
+function updatePageImages() {
+  $('img').each(function (index, element) {
+    $(element).attr('src', element.src);
+    if (/[a-zA-Z]/.test($(element).attr('src'))) {
+      processImage(element);
+    }
+  });
+}
+

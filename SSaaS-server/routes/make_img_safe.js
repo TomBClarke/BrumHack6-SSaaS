@@ -67,7 +67,14 @@ router.post('/', function (req, res, next) {
     if (err) {
       next(err);
     } else {
-      var tags = rec.images[0].classifiers[0].classes.map(function (ele) { return ele.class; }).join('. ');
+      var image = rec.images[0];
+      if (image.error) {
+        err = new Error(image.error.description);
+        err.status = 400;
+        next(err);
+        return;
+      }
+      var tags = image.classifiers[0].classes.map(function (ele) { return ele.class; }).join('. ');
       var emotion = req.body.emotion;
       var language = req.body.language;
       var social = req.body.social;
